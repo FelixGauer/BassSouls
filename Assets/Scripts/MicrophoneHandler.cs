@@ -13,12 +13,9 @@ public class MicrophoneHandler : MonoBehaviour
     public int micReadLagSamples = 1024;
 
     [Header("Device")]
-    public string preferredDeviceContains = "Loopback";
+    public string preferredDeviceContains = "Focusrite";
     public int sampleRate = 48000;
     public int clipLengthSeconds = 1;
-
-    [Header("Test Sounds")]
-    [SerializeField] private AudioClip[] testSounds;
 
     private string selectedDevice;
     [HideInInspector] public bool usingMic;
@@ -39,11 +36,6 @@ public class MicrophoneHandler : MonoBehaviour
         StartMicrophone();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
 
     void StartMicrophone()
     {
@@ -216,34 +208,4 @@ public class MicrophoneHandler : MonoBehaviour
         return true;
     }
 
-    public void PlayBassWithControllers()
-    {
-        if (!usingMic)
-        {
-            AudioClip selectedClip = null;
-
-            if (OVRInput.GetDown(OVRInput.Button.SecondaryHandTrigger))
-            {
-                selectedClip = testSounds[0]; // grip
-            }
-            else if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger))
-            {
-                selectedClip = testSounds[1]; // index
-            }
-            else if (OVRInput.GetDown(OVRInput.Button.One))
-            {
-                selectedClip = testSounds[2]; // A btn
-            }
-            else if (OVRInput.GetDown(OVRInput.Button.Two))
-            {
-                selectedClip = testSounds[3]; // B btn
-            }
-
-            if (selectedClip != null)
-            {
-                audioSource.clip = selectedClip;
-                audioSource.Play();
-            }
-        }
-    }
 }
