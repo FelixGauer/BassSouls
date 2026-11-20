@@ -1,10 +1,29 @@
 using System;
+using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(AudioSource))]
 public class BassInputHandler : MonoBehaviour
 {
     public static BassInputHandler Instance;
+
+    [Header("Debug Bass Input")]
+    public bool debugMode = true;
+
+    [Tooltip("If true, debug mode skips microphone/RMS/YIN processing entirely.")]
+    public bool debugModeBypassesMic = true;
+
+    [Tooltip("Minimum time between debug bass signals.")]
+    public float debugSignalCooldownSeconds = 0.12f;
+
+    [Header("Debug Frequencies")]
+    public float debugMoveNorthFrequency = 98f;
+    public float debugMoveSouthFrequency = 41f;
+    public float debugMoveWestFrequency = 55f;
+    public float debugMoveEastFrequency = 73f;
+    public float debugRotateLeftFrequency = 130f;
+    public float debugRotateRightFrequency = 150f;
 
     [Header("Readout")]
     [Range(0f, 1f)] public float smoothedLevel;
@@ -28,18 +47,12 @@ public class BassInputHandler : MonoBehaviour
 
     [Header("Debug Printing")]
     public bool printRmsCandidateDebug = true;
+    public bool printDebugBassInput = true;
 
-    /// <summary>
-    /// New generic bass signal event.
-    /// This is the main output from BassInputHandler now.
-    /// Other systems should subscribe to this.
-    /// </summary>
     public event Action<BassSignal> BassSignalConfirmed;
 
     /// <summary>
     /// Temporary legacy/simple event.
-    /// Keeping this for now in case anything still listens for a generic pluck.
-    /// We can remove this later.
     /// </summary>
     public event Action StringWasPlucked;
 
@@ -67,6 +80,8 @@ public class BassInputHandler : MonoBehaviour
 
     private float activeQuietStartTime = -1f;
 
+    private float lastDebugSignalTime = -999f;
+
     private enum BassInputState
     {
         Idle,
@@ -92,6 +107,97 @@ public class BassInputHandler : MonoBehaviour
     }
 
     private void Update()
+    {
+        if (debugMode)
+        {
+            ProcessDebugBassInput();
+
+            if (debugModeBypassesMic)
+            {
+                return;
+            }
+        }
+
+        ProcessRealBassInput();
+    }
+
+    private void ProcessDebugBassInput()
+    {
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard == null)
+        {
+            return;
+        }
+
+        if (Time.time - lastDebugSignalTime < debugSignalCooldownSeconds)
+        {
+            return;
+        }
+
+        // Debug bass movement signals.
+        if (keyboard.wKey.wasPressedThisFrame)
+        {
+            EmitDebugBassSignal(debugMoveNorthFrequency, "Debug Move North / W");
+            return;
+        }
+
+        if (keyboard.sKey.wasPressedThisFrame)
+        {
+            EmitDebugBassSignal(debugMoveSouthFrequency, "Debug Move South / S");
+            return;
+        }
+
+        if (keyboard.aKey.wasPressedThisFrame)
+        {
+            EmitDebugBassSignal(debugMoveWestFrequency, "Debug Move West / A");
+            return;
+        }
+
+        if (keyboard.dKey.wasPressedThisFrame)
+        {
+            EmitDebugBassSignal(debugMoveEastFrequency, "Debug Move East / D");
+            return;
+        }
+
+        // Debug bass rotation signals.
+        if (keyboard.qKey.wasPressedThisFrame)
+        {
+            EmitDebugBassSignal(debugRotateLeftFrequency, "Debug Rotate Left / Q");
+            return;
+        }
+
+        if (keyboard.eKey.wasPressedThisFrame)
+        {
+            EmitDebugBassSignal(debugRotateRightFrequency, "Debug Rotate Right / E");
+            return;
+        }
+    }
+
+    private void EmitDebugBassSignal(float frequency, string debugLabel)
+    {
+        lastDebugSignalTime = Time.time;
+
+        currentFrequency = frequency;
+
+        // Fake readout values for inspector visibility.
+        rawRms = 0.1f;
+        smoothedLevel = 0.75f;
+
+        BassSignal signal = new BassSignal(frequency);
+
+        if (printDebugBassInput)
+        {
+            Debug.Log(
+                $"BASS DEBUG SIGNAL | {debugLabel} | Frequency: {frequency:F2} Hz"
+            );
+        }
+
+        BassSignalConfirmed?.Invoke(signal);
+        StringWasPlucked?.Invoke();
+    }
+
+    private void ProcessRealBassInput()
     {
         if (micHandler == null)
         {
@@ -234,8 +340,6 @@ public class BassInputHandler : MonoBehaviour
         BassSignal bassSignal = new BassSignal(candidateBestFrequency);
 
         BassSignalConfirmed?.Invoke(bassSignal);
-
-        // Temporary backwards-compatible pluck event.
         StringWasPlucked?.Invoke();
 
         BeginActiveState(

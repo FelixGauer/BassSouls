@@ -25,31 +25,45 @@ public class BassActionMapper : MonoBehaviour
     {
         new FrequencyActionBand
         {
-            label = "E String / Low Range",
+            label = "Debug South / S",
             minFrequency = 35f,
             maxFrequency = 49f,
             actionVerb = BassActionVerb.MoveSouth
         },
         new FrequencyActionBand
         {
-            label = "A String / Low-Mid Range",
+            label = "Debug West / A",
             minFrequency = 49f,
             maxFrequency = 65f,
             actionVerb = BassActionVerb.MoveWest
         },
         new FrequencyActionBand
         {
-            label = "D String / Mid Range",
+            label = "Debug East / D",
             minFrequency = 65f,
             maxFrequency = 85f,
             actionVerb = BassActionVerb.MoveEast
         },
         new FrequencyActionBand
         {
-            label = "G String / High Range",
+            label = "Debug North / W",
             minFrequency = 85f,
             maxFrequency = 120f,
             actionVerb = BassActionVerb.MoveNorth
+        },
+        new FrequencyActionBand
+        {
+            label = "Debug Rotate Left / Q",
+            minFrequency = 120f,
+            maxFrequency = 140f,
+            actionVerb = BassActionVerb.RotateLeft
+        },
+        new FrequencyActionBand
+        {
+            label = "Debug Rotate Right / E",
+            minFrequency = 140f,
+            maxFrequency = 170f,
+            actionVerb = BassActionVerb.RotateRight
         }
     };
 
@@ -123,9 +137,9 @@ public class BassActionMapper : MonoBehaviour
 
     private void OnBassSignalConfirmed(BassSignal signal)
     {
-        BassActionVerb actionVerb = MapFrequencyToAction(signal.frequency);
+        FrequencyActionBand matchedBand = GetMatchingBand(signal.frequency);
 
-        if (actionVerb == BassActionVerb.None)
+        if (matchedBand == null)
         {
             if (printUnmappedFrequencies)
             {
@@ -137,21 +151,38 @@ public class BassActionMapper : MonoBehaviour
             return;
         }
 
+        BassActionVerb actionVerb = matchedBand.actionVerb;
+
+        if (actionVerb == BassActionVerb.None)
+        {
+            if (printUnmappedFrequencies)
+            {
+                Debug.Log(
+                    $"BassActionMapper | Frequency: {signal.frequency:F2} Hz matched band '{matchedBand.label}', but action is None."
+                );
+            }
+
+            return;
+        }
+
         if (printDebug)
         {
             Debug.Log(
-                $"BassActionMapper | Frequency: {signal.frequency:F2} Hz → Action: {actionVerb}"
+                $"BassActionMapper | " +
+                $"Frequency: {signal.frequency:F2} Hz | " +
+                $"Band: {matchedBand.label} | " +
+                $"Action: {actionVerb}"
             );
         }
 
         BassActionMapped?.Invoke(actionVerb, signal);
     }
 
-    private BassActionVerb MapFrequencyToAction(float frequency)
+    private FrequencyActionBand GetMatchingBand(float frequency)
     {
         if (frequencyBands == null)
         {
-            return BassActionVerb.None;
+            return null;
         }
 
         for (int i = 0; i < frequencyBands.Length; i++)
@@ -165,10 +196,10 @@ public class BassActionMapper : MonoBehaviour
 
             if (frequency >= band.minFrequency && frequency < band.maxFrequency)
             {
-                return band.actionVerb;
+                return band;
             }
         }
 
-        return BassActionVerb.None;
+        return null;
     }
 }

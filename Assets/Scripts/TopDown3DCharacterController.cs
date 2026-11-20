@@ -4,13 +4,13 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Simple top-down-style controller for a standard 3D Unity scene.
 /// 
-/// Keyboard controls:
-/// W = +Z
-/// S = -Z
-/// A = -X
-/// D = +X
-/// Q = rotate left around Y
-/// E = rotate right around Y
+/// Direct keyboard controls:
+/// Arrow Up    = +Z
+/// Arrow Down  = -Z
+/// Arrow Left  = -X
+/// Arrow Right = +X
+/// N           = rotate left around Y
+/// M           = rotate right around Y
 /// 
 /// Bass/external controls:
 /// Other scripts can call TriggerBassAction(...)
@@ -75,24 +75,24 @@ public class TopDown3DCharacterController : MonoBehaviour
             return;
         }
 
-        // WASD movement in X/Z plane.
-        if (keyboard.wKey.isPressed)
+        // Arrow-key movement in X/Z plane.
+        if (keyboard.upArrowKey.isPressed)
             keyboardMoveInput.z += 1f;
 
-        if (keyboard.sKey.isPressed)
+        if (keyboard.downArrowKey.isPressed)
             keyboardMoveInput.z -= 1f;
 
-        if (keyboard.aKey.isPressed)
+        if (keyboard.leftArrowKey.isPressed)
             keyboardMoveInput.x -= 1f;
 
-        if (keyboard.dKey.isPressed)
+        if (keyboard.rightArrowKey.isPressed)
             keyboardMoveInput.x += 1f;
 
-        // Q/E rotation around Y.
-        if (keyboard.qKey.isPressed)
+        // N/M direct rotation around Y.
+        if (keyboard.nKey.isPressed)
             keyboardRotationInput -= 1f;
 
-        if (keyboard.eKey.isPressed)
+        if (keyboard.mKey.isPressed)
             keyboardRotationInput += 1f;
 
         keyboardMoveInput = Vector3.ClampMagnitude(keyboardMoveInput, 1f);

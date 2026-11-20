@@ -39,7 +39,12 @@ public class PitchDetector : MonoBehaviour
         lastYinPitchFound = false;
         lastYinConfidence = 0f;
 
-        bool gotMicData;
+        if (micHandler == null)
+        {
+            return false;
+        }
+
+        bool gotMicData = false;
 
         if (micHandler.useMicClipPolling)
         {
@@ -47,6 +52,11 @@ public class PitchDetector : MonoBehaviour
         }
         else
         {
+            if (micHandler.audioSource == null)
+            {
+                return false;
+            }
+
             micHandler.audioSource.GetOutputData(pitchBuffer, 0);
             gotMicData = true;
         }
@@ -79,7 +89,10 @@ public class PitchDetector : MonoBehaviour
 
         lastYinPitchFound = true;
 
-        bassHandler.currentFrequency = detectedFrequency;
+        if (bassHandler != null)
+        {
+            bassHandler.currentFrequency = detectedFrequency;
+        }
 
         return true;
     }
