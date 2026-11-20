@@ -119,6 +119,120 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &203807455
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 203807457}
+  - component: {fileID: 203807456}
+  m_Layer: 0
+  m_Name: GO_BassActionMapper
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &203807456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203807455}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e27a98c6a1aa4cd429f060c2b4810af9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BassActionMapper
+  autoFindBassInputHandler: 1
+  bassInputHandler: {fileID: 0}
+  frequencyBands:
+  - label: E String / Low Range
+    minFrequency: 35
+    maxFrequency: 49
+    actionVerb: 2
+  - label: A String / Low-Mid Range
+    minFrequency: 49
+    maxFrequency: 65
+    actionVerb: 3
+  - label: D String / Mid Range
+    minFrequency: 65
+    maxFrequency: 85
+    actionVerb: 4
+  - label: G String / High Range
+    minFrequency: 85
+    maxFrequency: 120
+    actionVerb: 1
+  printDebug: 1
+  printUnmappedFrequencies: 1
+--- !u!4 &203807457
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203807455}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &255158944
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 255158946}
+  - component: {fileID: 255158945}
+  m_Layer: 0
+  m_Name: GO_ControlBridge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &255158945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 255158944}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fbcb48e617dd83458c84d6c5f0eb2fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BassCharacterControllerBridge
+  autoFindBassActionMapper: 1
+  bassActionMapper: {fileID: 0}
+  autoFindCharacterController: 1
+  characterController: {fileID: 0}
+  printDebug: 1
+--- !u!4 &255158946
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 255158944}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -495,6 +609,105 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -1.477, z: 0}
+--- !u!1 &608455291
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 608455295}
+  - component: {fileID: 608455294}
+  - component: {fileID: 608455293}
+  - component: {fileID: 608455292}
+  m_Layer: 0
+  m_Name: GO_BassInputHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &608455292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 608455291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71fe9293407cd7c4aa01fb218dd98524, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  pitchBufferSize: 8192
+  minPitchFrequency: 28
+  maxPitchFrequency: 450
+  yinThreshold: 0.12
+  pitchMinRms: 0.005
+  pitchConfidenceThreshold: 0.75
+  lastYinPitchFound: 0
+  lastYinConfidence: 0
+--- !u!114 &608455293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 608455291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 676fdcd133c417f498e597f5db16510b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  useMicClipPolling: 1
+  micReadLagSamples: 1024
+  preferredDeviceContains: Focusrite
+  sampleRate: 48000
+  clipLengthSeconds: 1
+  usingMic: 0
+  audioThreadRms: 0
+  audioSource: {fileID: 0}
+--- !u!114 &608455294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 608455291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa4d60f263b218040af8cc126e173794, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  smoothedLevel: 0
+  rawRms: 0
+  gain: 10
+  smoothing: 12
+  currentFrequency: 0
+  candidateMaxDurationSeconds: 0.12
+  candidateYinCheckIntervalSeconds: 0.02
+  requiredValidPitchFrames: 4
+  minActiveSeconds: 0.15
+  releaseSmoothedLevelThreshold: 0.035
+  releaseRequiredQuietSeconds: 0.12
+  printActiveStateDebug: 1
+  printRmsCandidateDebug: 1
+--- !u!4 &608455295
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 608455291}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -672,8 +885,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f31b7328844bc74e9072a989c630344, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  enableKeyboardInput: 1
   moveSpeed: 5
   rotationSpeed: 180
+  enableBassActions: 1
+  bassMovePulseDuration: 0.15
+  bassRotationPulseDuration: 0.15
+  bassMoveSpeedMultiplier: 1
+  bassRotationSpeedMultiplier: 1
+  printBassActionDebug: 1
 --- !u!1 &1769848660
 GameObject:
   m_ObjectHideFlags: 0
@@ -794,4 +1014,7 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 587666078}
   - {fileID: 330585546}
+  - {fileID: 608455295}
+  - {fileID: 203807457}
   - {fileID: 1027783669}
+  - {fileID: 255158946}

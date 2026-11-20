@@ -7,11 +7,11 @@ public class BassInputHandler : MonoBehaviour
     public static BassInputHandler Instance;
 
     [Header("Readout")]
-    [Range(0f, 1f)] public float smoothedLevel; // used as wave rms parameter
+    [Range(0f, 1f)] public float smoothedLevel;
     public float rawRms;
     public float gain = 10f;
     public float smoothing = 12f;
-    public float currentFrequency; // also will be used for the wave mechanic
+    public float currentFrequency;
 
     [Header("Candidate Validation")]
     public float candidateMaxDurationSeconds = 0.12f;
@@ -29,9 +29,19 @@ public class BassInputHandler : MonoBehaviour
     [Header("Debug Printing")]
     public bool printRmsCandidateDebug = true;
 
-    [HideInInspector] public WaveSession waveSession; // holds wave class to keep its info in one place
-    public event Action StringWasPlucked;
+    /// <summary>
+    /// New generic bass signal event.
+    /// This is the main output from BassInputHandler now.
+    /// Other systems should subscribe to this.
+    /// </summary>
+    public event Action<BassSignal> BassSignalConfirmed;
 
+    /// <summary>
+    /// Temporary legacy/simple event.
+    /// Keeping this for now in case anything still listens for a generic pluck.
+    /// We can remove this later.
+    /// </summary>
+    public event Action StringWasPlucked;
 
     private MicrophoneHandler micHandler;
     private PitchDetector pitchDetector;
@@ -68,6 +78,12 @@ public class BassInputHandler : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -75,18 +91,12 @@ public class BassInputHandler : MonoBehaviour
         pitchDetector = GetComponent<PitchDetector>();
     }
 
-    void Start()
+    private void Update()
     {
-
-    }
-
-    void Update()
-    {
-        //if (!micHandler.usingMic)
-        //{
-        //    micHandler.PlayBassWithControllers();
-        //    return;
-        //}
+        if (micHandler == null)
+        {
+            return;
+        }
 
         if (micHandler.useMicClipPolling)
         {
@@ -131,7 +141,6 @@ public class BassInputHandler : MonoBehaviour
         }
 
         lastRms = smoothedLevel;
-
     }
 
     private void BeginRmsCandidate()
@@ -168,10 +177,17 @@ public class BassInputHandler : MonoBehaviour
             candidateLastYinCheckTime = Time.time;
             candidateYinChecks++;
 
-            bool yinPitchFound = pitchDetector.TryGetFrequencyData(
-                out float frequency,
-                out float confidence
-            );
+            bool yinPitchFound = false;
+            float frequency = 0f;
+            float confidence = 0f;
+
+            if (pitchDetector != null)
+            {
+                yinPitchFound = pitchDetector.TryGetFrequencyData(
+                    out frequency,
+                    out confidence
+                );
+            }
 
             if (yinPitchFound)
             {
@@ -202,7 +218,7 @@ public class BassInputHandler : MonoBehaviour
         if (printRmsCandidateDebug)
         {
             Debug.Log(
-                $"PHASE 6 BASS PLUCK CONFIRMED | " +
+                $"BASS PLUCK CONFIRMED | " +
                 $"Reason: ENOUGH_VALID_YIN_FRAMES | " +
                 $"Checks: {candidateYinChecks} | " +
                 $"Valid Frames: {candidateValidPitchFrames}/{requiredValidPitchFrames} | " +
@@ -212,32 +228,28 @@ public class BassInputHandler : MonoBehaviour
                 $"Confirmed Frequency: {candidateBestFrequency:F2} Hz"
             );
         }
-        ;
-
-        waveSession = new WaveSession
-        {
-            startTime = Time.time,
-            duration = candidatePeakSmoothedLevel,
-            waveFrequency = candidateBestFrequency
-        };
 
         currentFrequency = candidateBestFrequency;
+
+        BassSignal bassSignal = new BassSignal(candidateBestFrequency);
+
+        BassSignalConfirmed?.Invoke(bassSignal);
+
+        // Temporary backwards-compatible pluck event.
+        StringWasPlucked?.Invoke();
 
         BeginActiveState(
             candidateBestFrequency,
             candidatePeakRawRms,
             candidatePeakSmoothedLevel
         );
-
-        StringWasPlucked?.Invoke();
-
     }
 
     private void BeginActiveState(
-    float frequency,
-    float peakRawRms,
-    float peakSmoothedLevel
-)
+        float frequency,
+        float peakRawRms,
+        float peakSmoothedLevel
+    )
     {
         activeStartTime = Time.time;
         activeFrequency = frequency;
@@ -251,11 +263,10 @@ public class BassInputHandler : MonoBehaviour
         if (printActiveStateDebug)
         {
             Debug.Log(
-                $"PHASE 8 ACTIVE STARTED | " +
+                $"BASS ACTIVE STARTED | " +
                 $"Frequency: {activeFrequency:F2} Hz | " +
                 $"Peak Raw RMS: {activePeakRawRms:F6} | " +
                 $"Peak Smoothed Level: {activePeakSmoothedLevel:F6} | " +
-                $"WaveSession Active: {(waveSession != null && waveSession.IsActive)} | " +
                 $"Min Active Seconds: {minActiveSeconds:F3} | " +
                 $"Release Smoothed Threshold: {releaseSmoothedLevelThreshold:F6} | " +
                 $"Required Quiet Seconds: {releaseRequiredQuietSeconds:F3}"
@@ -267,28 +278,21 @@ public class BassInputHandler : MonoBehaviour
     {
         float activeAge = Time.time - activeStartTime;
 
-        bool waveHasEnded = waveSession == null || !waveSession.IsActive;
         bool minimumActiveTimePassed = activeAge >= minActiveSeconds;
-
         bool signalIsQuiet = smoothedLevel <= releaseSmoothedLevelThreshold;
 
-        // Do not even start counting quiet time until the wave has ended
-        // and the note has been active for at least the minimum duration.
-        if (!waveHasEnded || !minimumActiveTimePassed)
+        if (!minimumActiveTimePassed)
         {
             activeQuietStartTime = -1f;
             return;
         }
 
-        // Signal is still too loud / alive.
-        // Stay Active and keep blocking new candidates.
         if (!signalIsQuiet)
         {
             activeQuietStartTime = -1f;
             return;
         }
 
-        // Signal has just become quiet enough.
         if (activeQuietStartTime < 0f)
         {
             activeQuietStartTime = Time.time;
@@ -296,7 +300,7 @@ public class BassInputHandler : MonoBehaviour
             if (printActiveStateDebug)
             {
                 Debug.Log(
-                    $"PHASE 8 RELEASE QUIET WINDOW STARTED | " +
+                    $"BASS RELEASE QUIET WINDOW STARTED | " +
                     $"Active Age: {activeAge:F3}s | " +
                     $"Smoothed Level: {smoothedLevel:F6} | " +
                     $"Raw RMS: {rawRms:F6} | " +
@@ -317,7 +321,7 @@ public class BassInputHandler : MonoBehaviour
         if (printActiveStateDebug)
         {
             Debug.Log(
-                $"PHASE 8 ACTIVE RELEASED | " +
+                $"BASS ACTIVE RELEASED | " +
                 $"Active Duration: {activeAge:F3}s | " +
                 $"Quiet Duration: {quietDuration:F3}s | " +
                 $"Frequency: {activeFrequency:F2} Hz | " +
@@ -328,7 +332,6 @@ public class BassInputHandler : MonoBehaviour
         }
 
         activeQuietStartTime = -1f;
-
         inputState = BassInputState.Idle;
     }
 
@@ -336,48 +339,29 @@ public class BassInputHandler : MonoBehaviour
     {
         if (printRmsCandidateDebug)
         {
+            string lastYinPitchFoundText = "N/A";
+            string lastYinConfidenceText = "N/A";
+
+            if (pitchDetector != null)
+            {
+                lastYinPitchFoundText = pitchDetector.lastYinPitchFound.ToString();
+                lastYinConfidenceText = pitchDetector.lastYinConfidence.ToString("F3");
+            }
+
             Debug.Log(
-                $"PHASE 6 PLUCK CANDIDATE REJECTED | " +
+                $"BASS PLUCK CANDIDATE REJECTED | " +
                 $"Reason: {reason} | " +
                 $"Checks: {candidateYinChecks} | " +
                 $"Valid Frames: {candidateValidPitchFrames}/{requiredValidPitchFrames} | " +
                 $"Raw RMS Peak: {candidatePeakRawRms:F6} | " +
                 $"Smoothed RMS Peak: {candidatePeakSmoothedLevel:F6} | " +
-                $"Last YIN Pitch Found: {pitchDetector.lastYinPitchFound} | " +
-                $"Last YIN Confidence: {pitchDetector.lastYinConfidence:F3} | " +
+                $"Last YIN Pitch Found: {lastYinPitchFoundText} | " +
+                $"Last YIN Confidence: {lastYinConfidenceText} | " +
                 $"Best YIN Confidence: {candidateBestConfidence:F3} | " +
-                $"Best Frequency: {candidateBestFrequency:F2} Hz | " +
-                $"Wave Spawned: False"
+                $"Best Frequency: {candidateBestFrequency:F2} Hz"
             );
         }
-        ;
 
         inputState = BassInputState.Idle;
     }
-
-
-
-    #region ReadSoundData
-
-    //private void OnAudioFilterRead(float[] data, int channels)
-    //{
-    //    double sum = 0.0;
-    //
-    //    for (int i = 0; i < data.Length; i += channels)
-    //    {
-    //        float sample = data[i]; // left/mono channel
-    //        sum += sample * sample;
-    //    }
-    //
-    //    int sampleCount = data.Length / channels;
-    //    float rms = sampleCount > 0 ? Mathf.Sqrt((float)(sum / sampleCount)) : 0f;
-    //
-    //    audioThreadRms = rms;
-    //}
-
-
-
-
-    #endregion
-
 }

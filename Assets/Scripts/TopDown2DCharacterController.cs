@@ -1,85 +1,221 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// Simple top-down-style controller for a standard 3D Unity scene.
 /// 
-/// Assumptions:
-/// - Character exists in X/Z space.
-/// - Y is vertical.
-/// - W/S move along Z.
-/// - A/D move along X.
-/// - Q/E rotate around the Y axis.
-/// - No Rigidbody or physics required.
+/// Keyboard controls:
+/// W = +Z
+/// S = -Z
+/// A = -X
+/// D = +X
+/// Q = rotate left around Y
+/// E = rotate right around Y
 /// 
-/// Controls:
-/// W = move forward / +Z
-/// S = move backward / -Z
-/// A = move left / -X
-/// D = move right / +X
-/// Q = rotate counter-clockwise around Y
-/// E = rotate clockwise around Y
+/// Bass/external controls:
+/// Other scripts can call TriggerBassAction(...)
+/// to create short movement or rotation pulses.
 /// </summary>
 public class TopDown3DCharacterController : MonoBehaviour
 {
-    [Header("Movement")]
+    [Header("Keyboard Movement")]
+    [SerializeField] private bool enableKeyboardInput = true;
     [SerializeField] private float moveSpeed = 5f;
-
-    [Header("Rotation")]
     [SerializeField] private float rotationSpeed = 180f;
 
-    private Vector3 moveInput;
-    private float rotationInput;
+    [Header("Bass Action Pulses")]
+    [SerializeField] private bool enableBassActions = true;
+
+    [Tooltip("How long a bass movement pulse lasts in seconds.")]
+    [SerializeField] private float bassMovePulseDuration = 0.15f;
+
+    [Tooltip("How long a bass rotation pulse lasts in seconds.")]
+    [SerializeField] private float bassRotationPulseDuration = 0.15f;
+
+    [Tooltip("Movement speed multiplier for bass pulses.")]
+    [SerializeField] private float bassMoveSpeedMultiplier = 1f;
+
+    [Tooltip("Rotation speed multiplier for bass pulses.")]
+    [SerializeField] private float bassRotationSpeedMultiplier = 1f;
+
+    [Header("Debug")]
+    [SerializeField] private bool printBassActionDebug = true;
+
+    private Vector3 keyboardMoveInput;
+    private float keyboardRotationInput;
+
+    private Vector3 bassMoveInput;
+    private float bassRotationInput;
+
+    private float bassMovePulseTimer;
+    private float bassRotationPulseTimer;
 
     private void Update()
     {
-        ReadInput();
-        Move();
-        Rotate();
+        ReadKeyboardInput();
+        UpdateBassPulseTimers();
+        ApplyMovement();
+        ApplyRotation();
     }
 
-    private void ReadInput()
+    private void ReadKeyboardInput()
     {
+        keyboardMoveInput = Vector3.zero;
+        keyboardRotationInput = 0f;
+
+        if (!enableKeyboardInput)
+        {
+            return;
+        }
+
         Keyboard keyboard = Keyboard.current;
 
         if (keyboard == null)
+        {
             return;
+        }
 
-        moveInput = Vector3.zero;
-        rotationInput = 0f;
-
-        // WASD movement in X/Z plane
+        // WASD movement in X/Z plane.
         if (keyboard.wKey.isPressed)
-            moveInput.z -= 1f;
+            keyboardMoveInput.z += 1f;
 
         if (keyboard.sKey.isPressed)
-            moveInput.z += 1f;
+            keyboardMoveInput.z -= 1f;
 
         if (keyboard.aKey.isPressed)
-            moveInput.x += 1f;
+            keyboardMoveInput.x -= 1f;
 
         if (keyboard.dKey.isPressed)
-            moveInput.x -= 1f;
+            keyboardMoveInput.x += 1f;
 
-        // Q/E rotation around Y axis
+        // Q/E rotation around Y.
         if (keyboard.qKey.isPressed)
-            rotationInput -= 1f;
+            keyboardRotationInput -= 1f;
 
         if (keyboard.eKey.isPressed)
-            rotationInput += 1f;
+            keyboardRotationInput += 1f;
 
-        // Prevent faster diagonal movement
-        moveInput = Vector3.ClampMagnitude(moveInput, 1f);
+        keyboardMoveInput = Vector3.ClampMagnitude(keyboardMoveInput, 1f);
     }
 
-    private void Move()
+    private void UpdateBassPulseTimers()
     {
-        transform.position += moveInput * moveSpeed * Time.deltaTime;
+        if (bassMovePulseTimer > 0f)
+        {
+            bassMovePulseTimer -= Time.deltaTime;
+
+            if (bassMovePulseTimer <= 0f)
+            {
+                bassMovePulseTimer = 0f;
+                bassMoveInput = Vector3.zero;
+            }
+        }
+
+        if (bassRotationPulseTimer > 0f)
+        {
+            bassRotationPulseTimer -= Time.deltaTime;
+
+            if (bassRotationPulseTimer <= 0f)
+            {
+                bassRotationPulseTimer = 0f;
+                bassRotationInput = 0f;
+            }
+        }
     }
 
-    private void Rotate()
+    private void ApplyMovement()
     {
-        float rotationAmount = rotationInput * rotationSpeed * Time.deltaTime;
+        Vector3 finalMoveInput = Vector3.zero;
+
+        finalMoveInput += keyboardMoveInput;
+
+        if (enableBassActions)
+        {
+            finalMoveInput += bassMoveInput * bassMoveSpeedMultiplier;
+        }
+
+        finalMoveInput = Vector3.ClampMagnitude(finalMoveInput, 1f);
+
+        transform.position += finalMoveInput * moveSpeed * Time.deltaTime;
+    }
+
+    private void ApplyRotation()
+    {
+        float finalRotationInput = keyboardRotationInput;
+
+        if (enableBassActions)
+        {
+            finalRotationInput += bassRotationInput * bassRotationSpeedMultiplier;
+        }
+
+        float rotationAmount = finalRotationInput * rotationSpeed * Time.deltaTime;
+
         transform.Rotate(0f, rotationAmount, 0f, Space.World);
+    }
+
+    public void TriggerBassAction(BassActionVerb actionVerb)
+    {
+        if (!enableBassActions)
+        {
+            return;
+        }
+
+        switch (actionVerb)
+        {
+            case BassActionVerb.MoveNorth:
+                TriggerBassMove(Vector3.forward);
+                break;
+
+            case BassActionVerb.MoveSouth:
+                TriggerBassMove(Vector3.back);
+                break;
+
+            case BassActionVerb.MoveWest:
+                TriggerBassMove(Vector3.left);
+                break;
+
+            case BassActionVerb.MoveEast:
+                TriggerBassMove(Vector3.right);
+                break;
+
+            case BassActionVerb.RotateLeft:
+                TriggerBassRotation(-1f);
+                break;
+
+            case BassActionVerb.RotateRight:
+                TriggerBassRotation(1f);
+                break;
+
+            case BassActionVerb.Action1:
+                if (printBassActionDebug)
+                    Debug.Log("TopDown3DCharacterController received Action1. No behavior assigned yet.");
+                break;
+
+            case BassActionVerb.Action2:
+                if (printBassActionDebug)
+                    Debug.Log("TopDown3DCharacterController received Action2. No behavior assigned yet.");
+                break;
+
+            case BassActionVerb.None:
+            default:
+                break;
+        }
+
+        if (printBassActionDebug)
+        {
+            Debug.Log($"Character Controller received bass action: {actionVerb}");
+        }
+    }
+
+    private void TriggerBassMove(Vector3 direction)
+    {
+        bassMoveInput = direction.normalized;
+        bassMovePulseTimer = bassMovePulseDuration;
+    }
+
+    private void TriggerBassRotation(float direction)
+    {
+        bassRotationInput = Mathf.Sign(direction);
+        bassRotationPulseTimer = bassRotationPulseDuration;
     }
 }
