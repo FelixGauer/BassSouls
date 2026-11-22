@@ -50,10 +50,6 @@ public class BassInputHandler : MonoBehaviour
     public bool printDebugBassInput = true;
 
     public event Action<BassSignal> BassSignalConfirmed;
-
-    /// <summary>
-    /// Temporary legacy/simple event.
-    /// </summary>
     public event Action StringWasPlucked;
 
     private MicrophoneHandler micHandler;
