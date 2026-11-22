@@ -17,13 +17,12 @@ public class BassInputHandler : MonoBehaviour
     [Tooltip("Minimum time between debug bass signals.")]
     public float debugSignalCooldownSeconds = 0.12f;
 
-    [Header("Debug Frequencies")]
-    public float debugMoveNorthFrequency = 98f;
-    public float debugMoveSouthFrequency = 41f;
-    public float debugMoveWestFrequency = 55f;
-    public float debugMoveEastFrequency = 73f;
-    public float debugRotateLeftFrequency = 130f;
-    public float debugRotateRightFrequency = 150f;
+    private float debugMoveNorthFrequency = 98f;
+    private float debugMoveSouthFrequency = 41f;
+    private float debugMoveWestFrequency = 55f;
+    private float debugMoveEastFrequency = 73f;
+    private float debugRotateLeftFrequency = 130f;
+    private float debugRotateRightFrequency = 150f;
 
     [Header("Readout")]
     [Range(0f, 1f)] public float smoothedLevel;

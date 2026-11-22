@@ -1,0 +1,282 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9eb2b7aff84eb384a950bd8efabb86ac, type: 3}
+  m_Name: DefaultControlProfile
+  m_EditorClassIdentifier: Assembly-CSharp::BassSoulsControlProfile
+  noteDefinitions:
+  - noteName: E2
+    midiNumber: 40
+    centerFrequency: 82.41
+    minFrequency: 80.06395
+    maxFrequency: 84.82462
+    enabled: 1
+  - noteName: F2
+    midiNumber: 41
+    centerFrequency: 87.31
+    minFrequency: 84.82462
+    maxFrequency: 89.86754
+    enabled: 1
+  - noteName: F#2
+    midiNumber: 42
+    centerFrequency: 92.5
+    minFrequency: 89.86754
+    maxFrequency: 95.2103
+    enabled: 1
+  - noteName: G2
+    midiNumber: 43
+    centerFrequency: 98
+    minFrequency: 95.2103
+    maxFrequency: 100.87289
+    enabled: 1
+  - noteName: G#2
+    midiNumber: 44
+    centerFrequency: 103.83
+    minFrequency: 100.87289
+    maxFrequency: 106.87048
+    enabled: 1
+  - noteName: A2
+    midiNumber: 45
+    centerFrequency: 110
+    minFrequency: 106.87048
+    maxFrequency: 113.22279
+    enabled: 1
+  - noteName: A#2
+    midiNumber: 46
+    centerFrequency: 116.54
+    minFrequency: 113.22279
+    maxFrequency: 119.95497
+    enabled: 1
+  - noteName: B2
+    midiNumber: 47
+    centerFrequency: 123.47
+    minFrequency: 119.95497
+    maxFrequency: 127.08702
+    enabled: 1
+  - noteName: C3
+    midiNumber: 48
+    centerFrequency: 130.81
+    minFrequency: 127.08702
+    maxFrequency: 134.64381
+    enabled: 1
+  - noteName: C#3
+    midiNumber: 49
+    centerFrequency: 138.59
+    minFrequency: 134.64381
+    maxFrequency: 142.65051
+    enabled: 1
+  - noteName: D3
+    midiNumber: 50
+    centerFrequency: 146.83
+    minFrequency: 142.65051
+    maxFrequency: 151.13197
+    enabled: 1
+  - noteName: D#3
+    midiNumber: 51
+    centerFrequency: 155.56
+    minFrequency: 151.13197
+    maxFrequency: 160.11823
+    enabled: 1
+  - noteName: E3
+    midiNumber: 52
+    centerFrequency: 164.81
+    minFrequency: 160.11823
+    maxFrequency: 169.63925
+    enabled: 1
+  - noteName: F3
+    midiNumber: 53
+    centerFrequency: 174.61
+    minFrequency: 169.63925
+    maxFrequency: 179.72993
+    enabled: 1
+  - noteName: F#3
+    midiNumber: 54
+    centerFrequency: 185
+    minFrequency: 179.72993
+    maxFrequency: 190.4206
+    enabled: 1
+  - noteName: G3
+    midiNumber: 55
+    centerFrequency: 196
+    minFrequency: 190.4206
+    maxFrequency: 201.74092
+    enabled: 1
+  - noteName: G#3
+    midiNumber: 56
+    centerFrequency: 207.65
+    minFrequency: 201.74092
+    maxFrequency: 213.73582
+    enabled: 1
+  - noteName: A3
+    midiNumber: 57
+    centerFrequency: 220
+    minFrequency: 213.73582
+    maxFrequency: 226.44559
+    enabled: 1
+  - noteName: A#3
+    midiNumber: 58
+    centerFrequency: 233.08
+    minFrequency: 226.44559
+    maxFrequency: 239.90994
+    enabled: 1
+  - noteName: B3
+    midiNumber: 59
+    centerFrequency: 246.94
+    minFrequency: 239.90994
+    maxFrequency: 254.17891
+    enabled: 1
+  - noteName: C4
+    midiNumber: 60
+    centerFrequency: 261.63
+    minFrequency: 254.17891
+    maxFrequency: 269.29636
+    enabled: 1
+  stateMaps:
+  - state: 1
+    bindings:
+    - midiNumber: 0
+      noteName: 
+      intent: 0
+    - midiNumber: 0
+      noteName: 
+      intent: 0
+    - midiNumber: 40
+      noteName: E2
+      intent: 0
+    - midiNumber: 41
+      noteName: F2
+      intent: 0
+    - midiNumber: 42
+      noteName: F#2
+      intent: 0
+    - midiNumber: 43
+      noteName: G2
+      intent: 0
+    - midiNumber: 44
+      noteName: G#2
+      intent: 0
+    - midiNumber: 45
+      noteName: A2
+      intent: 0
+    - midiNumber: 46
+      noteName: A#2
+      intent: 0
+    - midiNumber: 47
+      noteName: B2
+      intent: 0
+    - midiNumber: 48
+      noteName: C3
+      intent: 0
+    - midiNumber: 49
+      noteName: C#3
+      intent: 0
+    - midiNumber: 50
+      noteName: D3
+      intent: 0
+    - midiNumber: 51
+      noteName: D#3
+      intent: 0
+    - midiNumber: 52
+      noteName: E3
+      intent: 0
+    - midiNumber: 53
+      noteName: F3
+      intent: 0
+    - midiNumber: 54
+      noteName: F#3
+      intent: 0
+    - midiNumber: 55
+      noteName: G3
+      intent: 0
+    - midiNumber: 56
+      noteName: G#3
+      intent: 0
+    - midiNumber: 57
+      noteName: A3
+      intent: 0
+    - midiNumber: 58
+      noteName: A#3
+      intent: 0
+    - midiNumber: 59
+      noteName: B3
+      intent: 0
+    - midiNumber: 60
+      noteName: C4
+      intent: 0
+  - state: 0
+    bindings:
+    - midiNumber: 40
+      noteName: E2
+      intent: 2
+    - midiNumber: 41
+      noteName: F2
+      intent: 0
+    - midiNumber: 42
+      noteName: F#2
+      intent: 0
+    - midiNumber: 43
+      noteName: G2
+      intent: 3
+    - midiNumber: 44
+      noteName: G#2
+      intent: 0
+    - midiNumber: 45
+      noteName: A2
+      intent: 0
+    - midiNumber: 46
+      noteName: A#2
+      intent: 0
+    - midiNumber: 47
+      noteName: B2
+      intent: 4
+    - midiNumber: 48
+      noteName: C3
+      intent: 0
+    - midiNumber: 49
+      noteName: C#3
+      intent: 0
+    - midiNumber: 50
+      noteName: D3
+      intent: 1
+    - midiNumber: 51
+      noteName: D#3
+      intent: 0
+    - midiNumber: 52
+      noteName: E3
+      intent: 0
+    - midiNumber: 53
+      noteName: F3
+      intent: 7
+    - midiNumber: 54
+      noteName: F#3
+      intent: 0
+    - midiNumber: 55
+      noteName: G3
+      intent: 0
+    - midiNumber: 56
+      noteName: G#3
+      intent: 0
+    - midiNumber: 57
+      noteName: A3
+      intent: 0
+    - midiNumber: 58
+      noteName: A#3
+      intent: 0
+    - midiNumber: 59
+      noteName: B3
+      intent: 0
+    - midiNumber: 60
+      noteName: C4
+      intent: 0
+  initialState: 0
+  movementHoldSeconds: 1
+  attackHoldSeconds: 0.5
+  stickStrength: 1
