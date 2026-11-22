@@ -11,5 +11,8 @@ public enum SoulsIntent
     TurnRight,
 
     LightAttack,
-    Roll
+    Roll,
+
+    ToggleControlState,
+    ReturnToDefault
 }

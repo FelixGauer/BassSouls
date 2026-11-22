@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class SoulsIntentRuntimeController : MonoBehaviour
 {
@@ -31,6 +31,10 @@ public class SoulsIntentRuntimeController : MonoBehaviour
         {
             currentState = profile.initialState;
         }
+        else
+        {
+            currentState = SoulsControlState.Default;
+        }
     }
 
     private void Update()
@@ -47,6 +51,20 @@ public class SoulsIntentRuntimeController : MonoBehaviour
     {
         if (profile == null)
         {
+            return;
+        }
+
+        SoulsControlState stateBeforeIntent = currentState;
+
+        if (intent == SoulsIntent.ToggleControlState)
+        {
+            ToggleControlState(sourceNote, sourceFrequency);
+            return;
+        }
+
+        if (intent == SoulsIntent.ReturnToDefault)
+        {
+            ReturnToDefault(sourceNote, sourceFrequency);
             return;
         }
 
@@ -93,7 +111,7 @@ public class SoulsIntentRuntimeController : MonoBehaviour
 
             Debug.Log(
                 $"SOULS INTENT RECEIVED | " +
-                $"State: {currentState} | " +
+                $"State: {stateBeforeIntent} | " +
                 $"Note: {noteName} | " +
                 $"Frequency: {sourceFrequency:F2} Hz | " +
                 $"Intent: {intent}"
@@ -103,11 +121,63 @@ public class SoulsIntentRuntimeController : MonoBehaviour
 
     public void SetState(SoulsControlState newState)
     {
+        SoulsControlState previousState = currentState;
         currentState = newState;
 
         if (printDebug)
         {
-            Debug.Log($"Souls control state changed to: {currentState}");
+            Debug.Log(
+                $"SOULS CONTROL STATE CHANGED | " +
+                $"{previousState} → {currentState}"
+            );
+        }
+    }
+
+    private void ToggleControlState(BassNoteDefinition sourceNote, float sourceFrequency)
+    {
+        SoulsControlState previousState = currentState;
+
+        if (currentState == SoulsControlState.Default)
+        {
+            currentState = SoulsControlState.LockedOn;
+        }
+        else
+        {
+            currentState = SoulsControlState.Default;
+        }
+
+        ClearMomentaryOutputs();
+
+        if (printDebug)
+        {
+            string noteName = sourceNote != null ? sourceNote.noteName : "None";
+
+            Debug.Log(
+                $"SOULS CONTROL STATE TOGGLED | " +
+                $"Note: {noteName} | " +
+                $"Frequency: {sourceFrequency:F2} Hz | " +
+                $"{previousState} → {currentState}"
+            );
+        }
+    }
+
+    private void ReturnToDefault(BassNoteDefinition sourceNote, float sourceFrequency)
+    {
+        SoulsControlState previousState = currentState;
+        currentState = SoulsControlState.Default;
+
+        ClearMomentaryOutputs();
+
+        if (printDebug)
+        {
+            string noteName = sourceNote != null ? sourceNote.noteName : "None";
+
+            Debug.Log(
+                $"SOULS CONTROL STATE RESET | " +
+                $"Note: {noteName} | " +
+                $"Frequency: {sourceFrequency:F2} Hz | " +
+                $"{previousState} → {currentState}"
+            );
         }
     }
 
@@ -118,48 +188,73 @@ public class SoulsIntentRuntimeController : MonoBehaviour
         float leftStickX = 0f;
         float leftStickY = 0f;
 
+        float rightStickX = 0f;
+        float rightStickY = 0f;
+
+        // Character movement: left stick.
         if (now < moveForwardUntil)
         {
-            leftStickY = profile.stickStrength;
+            leftStickY = profile.movementStickStrength;
         }
 
         if (now < moveBackwardUntil)
         {
-            leftStickY = -profile.stickStrength;
+            leftStickY = -profile.movementStickStrength;
         }
 
         if (now < moveLeftUntil)
         {
-            leftStickX = -profile.stickStrength;
+            leftStickX = -profile.movementStickStrength;
         }
 
         if (now < moveRightUntil)
         {
-            leftStickX = profile.stickStrength;
+            leftStickX = profile.movementStickStrength;
         }
 
+        // Camera turning: right stick.
         if (now < turnLeftUntil)
         {
-            leftStickX = -profile.stickStrength;
+            rightStickX = -profile.cameraStickStrength;
         }
 
         if (now < turnRightUntil)
         {
-            leftStickX = profile.stickStrength;
+            rightStickX = profile.cameraStickStrength;
         }
 
         bool lightAttackPressed = now < lightAttackUntil;
         bool rollPressed = now < rollUntil;
 
         VirtualGamepadOutput.State.SetLeftStick(leftStickX, leftStickY);
+        VirtualGamepadOutput.State.SetRightStick(rightStickX, rightStickY);
+
         VirtualGamepadOutput.State.SetButton(GamepadButton.RightShoulder, lightAttackPressed);
         VirtualGamepadOutput.State.SetButton(GamepadButton.B, rollPressed);
     }
 
-    private void OnDisable()
+    private void ClearMomentaryOutputs()
     {
+        moveForwardUntil = 0f;
+        moveBackwardUntil = 0f;
+        moveLeftUntil = 0f;
+        moveRightUntil = 0f;
+
+        turnLeftUntil = 0f;
+        turnRightUntil = 0f;
+
+        lightAttackUntil = 0f;
+        rollUntil = 0f;
+
         VirtualGamepadOutput.State.SetLeftStick(0f, 0f);
+        VirtualGamepadOutput.State.SetRightStick(0f, 0f);
+
         VirtualGamepadOutput.State.SetButton(GamepadButton.RightShoulder, false);
         VirtualGamepadOutput.State.SetButton(GamepadButton.B, false);
+    }
+
+    private void OnDisable()
+    {
+        ClearMomentaryOutputs();
     }
 }

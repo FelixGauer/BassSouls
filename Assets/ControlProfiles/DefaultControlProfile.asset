@@ -227,13 +227,13 @@ MonoBehaviour:
       intent: 3
     - midiNumber: 44
       noteName: G#2
-      intent: 0
+      intent: 5
     - midiNumber: 45
       noteName: A2
-      intent: 0
+      intent: 8
     - midiNumber: 46
       noteName: A#2
-      intent: 0
+      intent: 6
     - midiNumber: 47
       noteName: B2
       intent: 4
@@ -279,4 +279,5 @@ MonoBehaviour:
   initialState: 0
   movementHoldSeconds: 1
   attackHoldSeconds: 0.5
-  stickStrength: 1
+  movementStickStrength: 1
+  cameraStickStrength: 0.6

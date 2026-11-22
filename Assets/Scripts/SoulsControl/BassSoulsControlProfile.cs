@@ -19,7 +19,9 @@ public class BassSoulsControlProfile : ScriptableObject
     [Min(0f)] public float movementHoldSeconds = 1.0f;
     [Min(0f)] public float attackHoldSeconds = 0.5f;
 
-    [Range(0f, 1f)] public float stickStrength = 1.0f;
+    [Header("Stick Strengths")]
+    [Range(0f, 1f)] public float movementStickStrength = 1.0f;
+    [Range(0f, 1f)] public float cameraStickStrength = 0.45f;
 
     private struct HardcodedNote
     {
