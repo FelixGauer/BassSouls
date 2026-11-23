@@ -750,13 +750,22 @@ MonoBehaviour:
   currentFrequency: 0
   candidateMaxDurationSeconds: 0.12
   candidateYinCheckIntervalSeconds: 0.02
-  requiredValidPitchFrames: 4
+  requiredValidPitchFrames: 3
+  rmsDeltaThreshold: 0.01
   minActiveSeconds: 0.15
   releaseSmoothedLevelThreshold: 0.035
   releaseRequiredQuietSeconds: 0.12
+  continuedListenDelaySeconds: 0.25
+  continuedReadySmoothedLevelThreshold: 0.6
+  printContinuationReadinessDebug: 1
+  continuedAttackDeltaThreshold: 0.8
+  continuedAttackMinimumSmoothedLevel: 0.8
+  printContinuationAttackDebug: 1
   printActiveStateDebug: 1
   printRmsCandidateDebug: 1
   printDebugBassInput: 1
+  printBassSignalEmissionDebug: 1
+  sendMutedSignalsToLegacyConfirmedEvent: 0
 --- !u!4 &608455295
 Transform:
   m_ObjectHideFlags: 0

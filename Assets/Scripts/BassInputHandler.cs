@@ -1,5 +1,4 @@
 using System;
-using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -36,10 +35,32 @@ public class BassInputHandler : MonoBehaviour
     public float candidateYinCheckIntervalSeconds = 0.02f;
     public int requiredValidPitchFrames = 4;
 
-    [Header("Release")]
+    [Header("Initial Started Attack")]
+    public float rmsDeltaThreshold = 0.01f;
+
+    [Header("Release / Muted")]
     public float minActiveSeconds = 0.15f;
     public float releaseSmoothedLevelThreshold = 0.035f;
     public float releaseRequiredQuietSeconds = 0.12f;
+
+    [Header("Continuation Readiness")]
+    [Tooltip("Minimum time after Started/Continued before another pluck may count as Continued.")]
+    public float continuedListenDelaySeconds = 0.25f;
+
+    [Tooltip("Smoothed level must fall to or below this value before Continued detection can be armed.")]
+    public float continuedReadySmoothedLevelThreshold = 0.35f;
+
+    [Tooltip("Print when continuation listening becomes armed.")]
+    public bool printContinuationReadinessDebug = true;
+
+    [Header("Continuation Attack Threshold")]
+
+
+    [Tooltip("Minimum smoothed RMS level required to consider a Continued attack.")]
+    public float continuedAttackMinimumSmoothedLevel = 0.12f;
+
+    [Tooltip("Print when a possible Continued attack is detected.")]
+    public bool printContinuationAttackDebug = true;
 
     [Header("Active State")]
     public bool printActiveStateDebug = true;
@@ -47,7 +68,13 @@ public class BassInputHandler : MonoBehaviour
     [Header("Debug Printing")]
     public bool printRmsCandidateDebug = true;
     public bool printDebugBassInput = true;
+    public bool printBassSignalEmissionDebug = true;
 
+    [Header("Legacy Event Compatibility")]
+    [Tooltip("If false, BassSignalConfirmed only receives Started/Continued signals. BassSignalEmitted still receives all signal types.")]
+    public bool sendMutedSignalsToLegacyConfirmedEvent = false;
+
+    public event Action<BassSignal> BassSignalEmitted;
     public event Action<BassSignal> BassSignalConfirmed;
     public event Action StringWasPlucked;
 
@@ -55,7 +82,6 @@ public class BassInputHandler : MonoBehaviour
     private PitchDetector pitchDetector;
 
     private float lastRms;
-    private float rmsDeltaThreshold = 0.01f;
 
     private float candidateStartTime;
     private float candidateLastYinCheckTime;
@@ -75,13 +101,16 @@ public class BassInputHandler : MonoBehaviour
 
     private float activeQuietStartTime = -1f;
 
+    private bool continuationListeningArmed;
+
     private float lastDebugSignalTime = -999f;
 
     private enum BassInputState
     {
         Idle,
-        Candidate,
-        Active
+        CandidateFromIdle,
+        Active,
+        CandidateFromActive
     }
 
     private BassInputState inputState = BassInputState.Idle;
@@ -130,7 +159,6 @@ public class BassInputHandler : MonoBehaviour
             return;
         }
 
-        // Debug bass movement signals.
         if (keyboard.wKey.wasPressedThisFrame)
         {
             EmitDebugBassSignal(debugMoveNorthFrequency, "Debug Move North / W");
@@ -155,7 +183,6 @@ public class BassInputHandler : MonoBehaviour
             return;
         }
 
-        // Debug bass rotation signals.
         if (keyboard.qKey.wasPressedThisFrame)
         {
             EmitDebugBassSignal(debugRotateLeftFrequency, "Debug Rotate Left / Q");
@@ -175,20 +202,24 @@ public class BassInputHandler : MonoBehaviour
 
         currentFrequency = frequency;
 
-        // Fake readout values for inspector visibility.
         rawRms = 0.1f;
         smoothedLevel = 0.75f;
 
-        BassSignal signal = new BassSignal(frequency);
+        BassSignal signal = new BassSignal(
+            frequency,
+            BassSignalType.Started
+        );
 
         if (printDebugBassInput)
         {
             Debug.Log(
-                $"BASS DEBUG SIGNAL | {debugLabel} | Frequency: {frequency:F2} Hz"
+                $"BASS DEBUG SIGNAL | {debugLabel} | " +
+                $"Frequency: {frequency:F2} Hz | " +
+                $"Type: {signal.signalType}"
             );
         }
 
-        BassSignalConfirmed?.Invoke(signal);
+        EmitBassSignal(signal);
         StringWasPlucked?.Invoke();
     }
 
@@ -228,25 +259,26 @@ public class BassInputHandler : MonoBehaviour
             case BassInputState.Idle:
                 if (delta > rmsDeltaThreshold)
                 {
-                    BeginRmsCandidate();
+                    BeginRmsCandidate(BassInputState.CandidateFromIdle);
                 }
                 break;
 
-            case BassInputState.Candidate:
+            case BassInputState.CandidateFromIdle:
+            case BassInputState.CandidateFromActive:
                 ProcessCandidateValidation();
                 break;
 
             case BassInputState.Active:
-                ProcessActiveState();
+                ProcessActiveState(delta);
                 break;
         }
 
         lastRms = smoothedLevel;
     }
 
-    private void BeginRmsCandidate()
+    private void BeginRmsCandidate(BassInputState candidateState)
     {
-        inputState = BassInputState.Candidate;
+        inputState = candidateState;
 
         candidateStartTime = Time.time;
         candidateLastYinCheckTime = -999f;
@@ -259,6 +291,8 @@ public class BassInputHandler : MonoBehaviour
 
         candidateBestFrequency = 0f;
         candidateBestConfidence = 0f;
+
+        activeQuietStartTime = -1f;
 
         ProcessCandidateValidation();
     }
@@ -316,38 +350,51 @@ public class BassInputHandler : MonoBehaviour
 
     private void ConfirmPluckCandidate()
     {
+        bool candidateWasFromActive = inputState == BassInputState.CandidateFromActive;
+
+        BassSignalType signalType = candidateWasFromActive
+            ? BassSignalType.Continued
+            : BassSignalType.Started;
+
         if (printRmsCandidateDebug)
         {
             Debug.Log(
                 $"BASS PLUCK CONFIRMED | " +
                 $"Reason: ENOUGH_VALID_YIN_FRAMES | " +
+                $"Source: {(candidateWasFromActive ? "Active" : "Idle")} | " +
                 $"Checks: {candidateYinChecks} | " +
                 $"Valid Frames: {candidateValidPitchFrames}/{requiredValidPitchFrames} | " +
                 $"Raw RMS Peak: {candidatePeakRawRms:F6} | " +
                 $"Smoothed RMS Peak: {candidatePeakSmoothedLevel:F6} | " +
                 $"Best YIN Confidence: {candidateBestConfidence:F3} | " +
-                $"Confirmed Frequency: {candidateBestFrequency:F2} Hz"
+                $"Confirmed Frequency: {candidateBestFrequency:F2} Hz | " +
+                $"Type: {signalType}"
             );
         }
 
         currentFrequency = candidateBestFrequency;
 
-        BassSignal bassSignal = new BassSignal(candidateBestFrequency);
+        BassSignal bassSignal = new BassSignal(
+            candidateBestFrequency,
+            signalType
+        );
 
-        BassSignalConfirmed?.Invoke(bassSignal);
+        EmitBassSignal(bassSignal);
         StringWasPlucked?.Invoke();
 
         BeginActiveState(
             candidateBestFrequency,
             candidatePeakRawRms,
-            candidatePeakSmoothedLevel
+            candidatePeakSmoothedLevel,
+            signalType
         );
     }
 
     private void BeginActiveState(
         float frequency,
         float peakRawRms,
-        float peakSmoothedLevel
+        float peakSmoothedLevel,
+        BassSignalType sourceSignalType
     )
     {
         activeStartTime = Time.time;
@@ -356,6 +403,7 @@ public class BassInputHandler : MonoBehaviour
         activePeakSmoothedLevel = peakSmoothedLevel;
 
         activeQuietStartTime = -1f;
+        continuationListeningArmed = false;
 
         inputState = BassInputState.Active;
 
@@ -363,19 +411,29 @@ public class BassInputHandler : MonoBehaviour
         {
             Debug.Log(
                 $"BASS ACTIVE STARTED | " +
+                $"Source Signal: {sourceSignalType} | " +
                 $"Frequency: {activeFrequency:F2} Hz | " +
                 $"Peak Raw RMS: {activePeakRawRms:F6} | " +
                 $"Peak Smoothed Level: {activePeakSmoothedLevel:F6} | " +
                 $"Min Active Seconds: {minActiveSeconds:F3} | " +
                 $"Release Smoothed Threshold: {releaseSmoothedLevelThreshold:F6} | " +
-                $"Required Quiet Seconds: {releaseRequiredQuietSeconds:F3}"
+                $"Required Quiet Seconds: {releaseRequiredQuietSeconds:F3} | " +
+                $"Continuation Delay: {continuedListenDelaySeconds:F3} | " +
+                $"Continuation Ready Threshold: {continuedReadySmoothedLevelThreshold:F6}"
             );
         }
     }
 
-    private void ProcessActiveState()
+    private void ProcessActiveState(float delta)
     {
         float activeAge = Time.time - activeStartTime;
+
+        UpdateContinuationReadiness(activeAge);
+
+        if (TryBeginContinuationCandidate(delta, activeAge))
+        {
+            return;
+        }
 
         bool minimumActiveTimePassed = activeAge >= minActiveSeconds;
         bool signalIsQuiet = smoothedLevel <= releaseSmoothedLevelThreshold;
@@ -417,6 +475,8 @@ public class BassInputHandler : MonoBehaviour
             return;
         }
 
+        EmitMutedSignal(activeAge, quietDuration);
+
         if (printActiveStateDebug)
         {
             Debug.Log(
@@ -431,11 +491,101 @@ public class BassInputHandler : MonoBehaviour
         }
 
         activeQuietStartTime = -1f;
+        continuationListeningArmed = false;
         inputState = BassInputState.Idle;
+    }
+
+    private void UpdateContinuationReadiness(float activeAge)
+    {
+        if (continuationListeningArmed)
+        {
+            return;
+        }
+
+        bool delayPassed = activeAge >= continuedListenDelaySeconds;
+        bool levelHasFallenEnough = smoothedLevel <= continuedReadySmoothedLevelThreshold;
+
+        if (!delayPassed || !levelHasFallenEnough)
+        {
+            return;
+        }
+
+        continuationListeningArmed = true;
+
+        if (printContinuationReadinessDebug)
+        {
+            Debug.Log(
+                $"BASS CONTINUATION LISTENING ARMED | " +
+                $"Active Age: {activeAge:F3}s | " +
+                $"Smoothed Level: {smoothedLevel:F6} | " +
+                $"Raw RMS: {rawRms:F6} | " +
+                $"Required Delay: {continuedListenDelaySeconds:F3}s | " +
+                $"Ready Threshold: {continuedReadySmoothedLevelThreshold:F6} | " +
+                $"Active Frequency: {activeFrequency:F2} Hz"
+            );
+        }
+    }
+
+    private bool TryBeginContinuationCandidate(float delta, float activeAge)
+    {
+        if (!continuationListeningArmed)
+        {
+            return false;
+        }
+
+        bool levelHighEnough = smoothedLevel >= continuedAttackMinimumSmoothedLevel;
+
+        if (!levelHighEnough)
+        {
+            return false;
+        }
+
+        if (printContinuationAttackDebug)
+        {
+            Debug.Log(
+                $"BASS CONTINUATION ATTACK DETECTED | " +
+                $"Active Age: {activeAge:F3}s | " +
+                $"Delta Observed: {delta:F6} | " +
+                $"Delta Gate: Disabled | " +
+                $"Smoothed Level: {smoothedLevel:F6} | " +
+                $"Required Min Level: {continuedAttackMinimumSmoothedLevel:F6} | " +
+                $"Raw RMS: {rawRms:F6} | " +
+                $"Previous Active Frequency: {activeFrequency:F2} Hz | " +
+                $"Entering: CandidateFromActive"
+            );
+        }
+
+        BeginRmsCandidate(BassInputState.CandidateFromActive);
+        return true;
+    }
+
+    private void EmitMutedSignal(float activeAge, float quietDuration)
+    {
+        BassSignal mutedSignal = new BassSignal(
+            activeFrequency,
+            BassSignalType.Muted
+        );
+
+        if (printBassSignalEmissionDebug)
+        {
+            Debug.Log(
+                $"BASS MUTED SIGNAL EMITTED | " +
+                $"Frequency: {activeFrequency:F2} Hz | " +
+                $"Type: {mutedSignal.signalType} | " +
+                $"Active Age: {activeAge:F3}s | " +
+                $"Quiet Duration: {quietDuration:F3}s | " +
+                $"Smoothed Level: {smoothedLevel:F6} | " +
+                $"Raw RMS: {rawRms:F6}"
+            );
+        }
+
+        EmitBassSignal(mutedSignal);
     }
 
     private void RejectCandidate(string reason)
     {
+        bool candidateWasFromActive = inputState == BassInputState.CandidateFromActive;
+
         if (printRmsCandidateDebug)
         {
             string lastYinPitchFoundText = "N/A";
@@ -450,6 +600,7 @@ public class BassInputHandler : MonoBehaviour
             Debug.Log(
                 $"BASS PLUCK CANDIDATE REJECTED | " +
                 $"Reason: {reason} | " +
+                $"Source: {(candidateWasFromActive ? "Active" : "Idle")} | " +
                 $"Checks: {candidateYinChecks} | " +
                 $"Valid Frames: {candidateValidPitchFrames}/{requiredValidPitchFrames} | " +
                 $"Raw RMS Peak: {candidatePeakRawRms:F6} | " +
@@ -457,10 +608,34 @@ public class BassInputHandler : MonoBehaviour
                 $"Last YIN Pitch Found: {lastYinPitchFoundText} | " +
                 $"Last YIN Confidence: {lastYinConfidenceText} | " +
                 $"Best YIN Confidence: {candidateBestConfidence:F3} | " +
-                $"Best Frequency: {candidateBestFrequency:F2} Hz"
+                $"Best Frequency: {candidateBestFrequency:F2} Hz | " +
+                $"Returning To: {(candidateWasFromActive ? "Active" : "Idle")}"
             );
         }
 
-        inputState = BassInputState.Idle;
+        if (candidateWasFromActive)
+        {
+            inputState = BassInputState.Active;
+            activeQuietStartTime = -1f;
+        }
+        else
+        {
+            inputState = BassInputState.Idle;
+        }
+    }
+
+    private void EmitBassSignal(BassSignal signal)
+    {
+        BassSignalEmitted?.Invoke(signal);
+
+        bool shouldForwardToLegacyConfirmed =
+            signal.signalType == BassSignalType.Started ||
+            signal.signalType == BassSignalType.Continued ||
+            sendMutedSignalsToLegacyConfirmedEvent;
+
+        if (shouldForwardToLegacyConfirmed)
+        {
+            BassSignalConfirmed?.Invoke(signal);
+        }
     }
 }
